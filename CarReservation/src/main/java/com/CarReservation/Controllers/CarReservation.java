@@ -114,7 +114,7 @@ public class CarReservation implements Serializable {
 	private boolean isOverlapping(CarInventory found, CarInventory searched) {
 		if (found.getReturnDate() != null && found.getPickupDate() != null) {
 			if (searched.getPickupDate().equals(found.getPickupDate())
-					&& searched.getRentedCar().equals(found.getRentedCar()))
+					&& searched.getReturnDate().equals(found.getReturnDate()))
 				return true;
 			if (searched.getPickupDate().before(found.getReturnDate())
 					&& searched.getPickupDate().after(found.getPickupDate())
