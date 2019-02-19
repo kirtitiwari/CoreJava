@@ -1,8 +1,9 @@
 package com.CarReservation.Controllers;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
@@ -37,46 +38,36 @@ public class CarReservation implements Serializable {
 		Car rentalcar2 = new Car("abc124", "large", false, true, "black");
 		Car rentalcar3 = new Car("abc125", "small", false, true, "blue");
 		Car rentalcar4 = new Car("abc132", "medium", false, true, "red");
+		LocalDate localDate4 = LocalDate.of(2019, 03, 10);
+		Date pickuptime4 = Date.from(localDate4.atStartOfDay(ZoneId.systemDefault()).toInstant());
+		LocalDate localdate4 = LocalDate.of(2019, 03, 15);
+		Date returntime4 = Date.from(localdate4.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
 		Car rentalcar5 = new Car("abc138", "small", false, true, "white");
+		LocalDate localDate5 = LocalDate.of(2019, 03, 01);
+		Date pickuptime5 = Date.from(localDate5.atStartOfDay(ZoneId.systemDefault()).toInstant());
+		LocalDate localdate5 = LocalDate.of(2019, 03, 05);
+		Date returntime5 = Date.from(localdate5.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
 		cars.put(rentalcar1.getRegNo(), new CarInventory(rentalcar1));
 		cars.put(rentalcar2.getRegNo(), new CarInventory(rentalcar2));
 		cars.put(rentalcar3.getRegNo(), new CarInventory(rentalcar3));
-		cars.put(rentalcar4.getRegNo(), new CarInventory(rentalcar4, new Date(2019, 2, 10), "New York"));
-		cars.put(rentalcar5.getRegNo(), new CarInventory(rentalcar5, new Date(2019, 2, 1), "New York"));
+		cars.put(rentalcar4.getRegNo(), new CarInventory(rentalcar4, pickuptime4, returntime4, "New York"));
+		cars.put(rentalcar5.getRegNo(), new CarInventory(rentalcar5, pickuptime5, returntime5));
+
 	}
 
 	/**
-	 * Add a new car into car inventory.
+	 * AddNewCar - Method Add a new car into car inventory.
 	 * 
-	 * @param car
-	 *            The car need to add with default pickup time(current time),
-	 *            default return time(null) and default location(Arizona)
-	 * @return display all cars into inventory with currently added car.
-	 */
-	public boolean addNewCar(Car carData) {
-		if (!cars.containsKey(carData.getRegNo())) {
-			this.cars.put(carData.getRegNo(), new CarInventory(carData));
-			// display();
-			return true;
-		} else {
-			System.out.println("Fail to add new car: already exists" + carData.toString() + " ");
-		}
-		return false;
-	}
-
-	/**
-	 * AddNewCar - Method overloading Add a new car into car inventory.
-	 * 
-	 * @param car
-	 *            The car need to add with given pickup time, given
-	 *            (specific)return time(null) and given location(Arizona)
+	 * @param car The car need to add.
 	 * @return display all cars into inventory with currently added car.
 	 */
 	public boolean addNewCar(CarInventory carData) {
 		if (carData.getRentedCar().getRegNo() != null && !carData.getRentedCar().getRegNo().isEmpty()
 				&& !cars.containsKey(carData.getRentedCar().getRegNo())) {
 			this.cars.put(carData.getRentedCar().getRegNo(), carData);
-			//display();
+			// display();
 			return true;
 		} else {
 			System.out.println("Fail to add new car: already exists" + carData.toString() + " ");
@@ -87,68 +78,99 @@ public class CarReservation implements Serializable {
 	/**
 	 * Search for a car matching the specified search criteria.
 	 * 
-	 * @param searched
-	 *            This object contains the search criteria.
-	 * @return A list of matching cars the searched car's description if a car
-	 *         with the same features as searchedCar function will return a list
-	 *         of found match , if no list will be empty/null.
+	 * @param searchCar This object contains the search criteria.
+	 * @return A list of matching cars the searched car's description if a car with
+	 *         the same features as searchedCar function will return a list of found
+	 *         match , if no list will be empty/null.
 	 */
-	public List<CarInventory> findAvailableCar(CarInventory searched) {
+
+	public List<CarInventory> search(Car searchCar, Date pickupDate, Date returnDate) {
 		List<CarInventory> availableCars = new ArrayList<CarInventory>();
+		CarInventory givenCar = new CarInventory(searchCar, pickupDate, returnDate);
 		for (CarInventory car : cars.values()) {
-			if (matches(car, searched) && !car.isBooked() && isOverlapping(car, searched)) {
+			if (isExists(car, givenCar) && isAvailable(car, givenCar)) {
 				availableCars.add(car);
 			}
+
 		}
 		return availableCars;
 	}
 
 	/**
-	 * Check searched car and found car pickup and return time overlapping
-	 * condition.
+	 * Reserve a specific Car - If there is an existing car available in desired
+	 * time frame.
 	 * 
-	 * @param searched
-	 *            car(required car) and found car.
+	 * @param searchcar The car that shall be marked as reserved
+	 * @param pickup    time - car pickup time
+	 * @param           return time - car return time
+	 */
+	public boolean reserveCar(Car searchCar, Date pickupDate, Date returnDate) {
+		boolean reserved = false;
+		CarInventory givenCar = new CarInventory(searchCar, pickupDate, returnDate);
+		for (CarInventory car : cars.values()) {
+			if (isExists(car, givenCar) && !car.isBooked() && isAvailable(car, givenCar)) {
+				car.setBooked(true);
+				car.setPickupDate(givenCar.getPickupDate());
+				car.setReturnDate(givenCar.getReturnDate());
+				cars.put(car.getRentedCar().getRegNo(), car);
+				reserved = true;
+				System.out.println("Your car is Reserved:" + car.toString());
+				break;
+			}
+
+		}
+		if (reserved == false)
+			System.out.println("Your car is not available :" + givenCar.toString());
+		return reserved;
+	}
+
+	/**
+	 * Check GivenCar car and FoundCar pickup and return time overlapping condition.
+	 * 
+	 * @param givenCar car(required car) and ExistsCar car in car-inventory
 	 * @return true if overlapping does not exists else return false
 	 */
-	private boolean isOverlapping(CarInventory found, CarInventory searched) {
-		if (found.getReturnDate() != null && found.getPickupDate() != null) {
-			if (searched.getPickupDate().equals(found.getPickupDate())
-					&& searched.getReturnDate().equals(found.getReturnDate()))
-				return true;
-			if (searched.getPickupDate().before(found.getReturnDate())
-					&& searched.getPickupDate().after(found.getPickupDate())
-					&& searched.getReturnDate().after(found.getPickupDate())
-					&& searched.getReturnDate().before(found.getReturnDate()))
-				return true;
+	private boolean isAvailable(CarInventory foundCar, CarInventory givenCar) {
+		boolean available = false;
+		if (givenCar.getPickupDate() == null || givenCar.getReturnDate() == null || foundCar.getPickupDate() == null
+				|| givenCar.getReturnDate() == null) {
+			available = false;
+		} else if (givenCar.getPickupDate().after(foundCar.getPickupDate())
+				&& givenCar.getPickupDate().before(foundCar.getReturnDate())
+				|| givenCar.getReturnDate().after(foundCar.getPickupDate())
+						&& givenCar.getReturnDate().before(foundCar.getReturnDate())
+				|| givenCar.getPickupDate().before(foundCar.getPickupDate())
+						&& givenCar.getReturnDate().after(foundCar.getReturnDate())
+				|| givenCar.getPickupDate().equals(foundCar.getPickupDate())
+						&& givenCar.getReturnDate().equals(foundCar.getReturnDate())) {
+			available = false;
 		} else {
-			if (searched.getPickupDate().after(found.getPickupDate())
-					|| searched.getPickupDate().equals(found.getPickupDate()))
-				return true;
+			available = true;
 		}
-		return false;
+		return available;
 	}
 
 	/**
 	 * Check Search for a car matching the specified search criteria like size,
 	 * color,location
 	 * 
-	 * @param searched
-	 *            car(required car) and found car.
+	 * @param givenCar car(required car) and foundCar car in car-inventory
 	 * @return true if exists or else false
 	 */
-	private boolean matches(CarInventory found, CarInventory searched) {
+	private boolean isExists(CarInventory foundCar, CarInventory givenCar) {
 
-		if (searched.getRentedCar().getSize() != null && !searched.getRentedCar().getSize().isEmpty()
-				&& !searched.getRentedCar().getSize().equals(found.getRentedCar().getSize())) {
+		if (givenCar.getRentedCar().getSize() != null && !givenCar.getRentedCar().getSize().isEmpty()
+				&& !givenCar.getRentedCar().getSize().equals(foundCar.getRentedCar().getSize())) {
 			return false;
 		}
-		if (searched.getRentedCar().getColor() != null && !searched.getRentedCar().getColor().isEmpty()
-				&& !searched.getRentedCar().getColor().equals(found.getRentedCar().getColor())) {
+		if (givenCar.getRentedCar().getColor() != null && !givenCar.getRentedCar().getColor().isEmpty()
+				&& !givenCar.getRentedCar().getColor().equals(foundCar.getRentedCar().getColor())) {
 			return false;
 		}
-		if (searched.getLocation() != null && !searched.getLocation().isEmpty()
-				&& searched.getLocation().equals(found.getLocation())) {
+		if (givenCar.getRentedCar().isAC() != foundCar.getRentedCar().isAC()) {
+			return false;
+		}
+		if (givenCar.getRentedCar().isFourWD() != foundCar.getRentedCar().isFourWD()) {
 			return false;
 		}
 		return true;
@@ -156,67 +178,8 @@ public class CarReservation implements Serializable {
 	}
 
 	/**
-	 * Rent a specific Car - If there is an existing car with the registration
-	 * number of the specified car, set its booked property to true and set pick
-	 * up and return time
-	 * 
-	 * @param car
-	 *            The car that shall be marked as rented, pickup time , return
-	 *            time.
-	 * @param pickup
-	 *            time - car pickup time
-	 * @param return
-	 *            time - car return time
+	 * Display all cars in current car-inventory
 	 */
-	public boolean rentCar(CarInventory car, Date pickuptime, Date returntime) {
-		CarInventory carToBook = findCarByRegNo(car);
-		if (!carToBook.isBooked()) {
-		carToBook.setPickupDate(pickuptime);
-		carToBook.setReturnDate(returntime);
-		carToBook.setBooked(true);
-		cars.put(carToBook.getRentedCar().getRegNo(), carToBook);
-		return true;
-		}
-		return false;
-	}
-
-	/**
-	 * If there is an existing car with the registration number of the specified
-	 * car, set its booked property to false and set pickup date as now and
-	 * return date null
-	 * 
-	 * @param car
-	 *            The car that shall be marked as return.
-	 */
-
-	public void returnCar(CarInventory car) {
-		CarInventory carToReturn = findCarByRegNo(car);
-		if (carToReturn.isBooked()) {
-			carToReturn.setBooked(false);
-			carToReturn.setPickupDate(new Date());
-			carToReturn.setReturnDate(null);
-			cars.put(carToReturn.getRentedCar().getRegNo(), carToReturn);
-		}
-		display();
-	}
-
-	/**
-	 * Search for a car by reg no number .
-	 *
-	 * @param searchedCar
-	 *            this object contain car reg no
-	 * @return car object if found or return null
-	 */
-	public CarInventory findCarByRegNo(CarInventory car) {
-		CarInventory foundcar = null;
-		if (car != null && !car.getRentedCar().getRegNo().isEmpty() && car.getRentedCar().getRegNo() != null) {
-			if (cars.containsKey(car.getRentedCar().getRegNo())) {
-				foundcar = cars.get(car.getRentedCar().getRegNo());
-				return foundcar;
-			} 
-		}
-		return foundcar;
-	}
 
 	public void display() {
 		for (Entry<String, CarInventory> entry : cars.entrySet()) {

@@ -17,7 +17,7 @@ public class CarInventory implements Serializable{
 	public CarInventory(Car rentedCar){
 		this.rentedCar = rentedCar;
 		this.pickupDate= new Date();
-		this.returnDate= null;
+		this.returnDate= CarInventory.returnDate();
 		this.location = "Arizona";
 		this.booked=false;
 	}
@@ -25,10 +25,19 @@ public class CarInventory implements Serializable{
 	public CarInventory(Car rentedCar, Date pickupDate, String location){
 		this.rentedCar = rentedCar;
 		this.pickupDate= pickupDate;
-		this.returnDate= null;
+		this.returnDate= CarInventory.returnDate(pickupDate);
 		this.location = location;
 		this.booked=false;
 	}
+	
+	public CarInventory(Car rentedCar, Date pickupDate, Date returnDate){
+		this.rentedCar = rentedCar;
+		this.pickupDate= pickupDate;
+		this.returnDate= returnDate;
+		this.location = "";
+		this.booked=false;
+	}
+
 	
 	public CarInventory(Car rentedCar, Date pickupDate, Date returnDate, String location){
 		this.rentedCar = rentedCar;
@@ -102,4 +111,23 @@ public class CarInventory implements Serializable{
 	}
 
 
+	private static Date returnDate() {
+		Date returnDate = new Date(); 
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(returnDate);
+		cal.add(Calendar.DATE, 4); // add 4 Days
+		returnDate = cal.getTime();
+		return returnDate;
+		
+	}
+	
+	private static Date returnDate(Date pickupDate) {
+		Date returnDate = pickupDate; 
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(returnDate);
+		cal.add(Calendar.DATE, 4); // add 4 Days
+		returnDate = cal.getTime();
+		return returnDate;
+		
+	}
 }
